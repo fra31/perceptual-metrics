@@ -10,7 +10,7 @@
 
 <div align="center">
 	
-| Model name              | Robust     | NIGHTS FT |    Checkpoint                             |
+| Model name              | Robust Method    | NIGHTS FT |    Checkpoint                             |
 |-------------------------|------------|-------------|-------------|
 | convnext_base_w | FARE  | --  |[Link](https://nc.mlcloud.uni-tuebingen.de/index.php/s/GCPXBDEE5PoCngy)     |
 | convnext_base_w | TeCoA  | -- | [Link](https://nc.mlcloud.uni-tuebingen.de/index.php/s/zHKCC9aS7rf4qCt)     |
