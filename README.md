@@ -12,10 +12,10 @@
 	
 | Model name              | Robust     | NIGHTS FT |    Checkpoint                             |
 |-------------------------|------------|-------------|-------------|
-| convnext_base_w | FARE  | --  |[Link](https://nc.mlcloud.uni-tuebingen.de/index.php/s/zSFgoAngcm47FZm)     |
-| convnext_base_w | TeCoA  | -- | [Link](https://nc.mlcloud.uni-tuebingen.de/index.php/s/zSFgoAngcm47FZm)     |
-| ViT-B-16 | FARE  | -- | [Link](https://nc.mlcloud.uni-tuebingen.de/index.php/s/zSFgoAngcm47FZm)     |
-| ViT-B-16 | TeCoA  | -- | [Link](https://nc.mlcloud.uni-tuebingen.de/index.php/s/zSFgoAngcm47FZm)     |
+| convnext_base_w | FARE  | --  |[Link](https://nc.mlcloud.uni-tuebingen.de/index.php/s/GCPXBDEE5PoCngy)     |
+| convnext_base_w | TeCoA  | -- | [Link](https://nc.mlcloud.uni-tuebingen.de/index.php/s/zHKCC9aS7rf4qCt)     |
+| ViT-B-16 | FARE  | -- | [Link](https://nc.mlcloud.uni-tuebingen.de/index.php/s/fg7JHQzASiNnxCg)     |
+| ViT-B-16 | TeCoA  | -- | [Link](https://nc.mlcloud.uni-tuebingen.de/index.php/s/ZBkmbMrAwgfeeSa)     |
 | convnext_base_w | FARE | LoRA  | [Link](https://nc.mlcloud.uni-tuebingen.de/index.php/s/zSFgoAngcm47FZm)     |
 | convnext_base_w | TeCoA | LoRA  | [Link](https://nc.mlcloud.uni-tuebingen.de/index.php/s/zSFgoAngcm47FZm)     |
 | convnext_base_w | FARE | MLP  | [Link](https://nc.mlcloud.uni-tuebingen.de/index.php/s/Fb73e3i2PmWfwpN)     |
