@@ -4,16 +4,11 @@ import torch.nn.functional as F
 from torchvision import datasets, transforms
 import open_clip
 import clip
-import utils_vis
-import matplotlib.pyplot as plt
-import model_zoo.utils_architectures_new as utils
 from PIL import Image
 import os
-import math
-import argparse
 from types import SimpleNamespace
 
-import utils_vis
+import utils_perceptual_eval
 
 
 SHORTNAMES = {
@@ -102,6 +97,10 @@ LORA_WEIGHTS_DICT = {
     'openclip-laion-vitb32': '../robust-clip/lora_ours_vitb32_laion2B_original_embedding_lr0.0003_bs32_wd0.0_hidsize1_marg0.05_augmFalse_lorar16_loraalph0.5_loradrop0.3_2024-03-04_16-03-59/lightning_logs/version_0/checkpoints/epoch_2_open_clip_vitb32'
 }
 
+PRETRAINED_MODELS = {
+    'convnext_base-fare': {'ckptpath': 'convnext_base_w-fare-eps4.pt',}
+}
+
 
 class ClipVisionModel(torch.nn.Module):
     def __init__(self, model, args, normalize, all_tokens=False, proj=True):
@@ -133,57 +132,85 @@ class ClipVisionModel(torch.nn.Module):
             return embedding
 
 
-class IntFeatWrapper(torch.nn.Module):
-    
-    def __init__(self, model, mode) -> None:
+class ProjModel(nn.Module):
+    def __init__(self, fts, proj):
         super().__init__()
-        self.model = model
-        self.mode = mode
-        self.vis = {}
-        utils_vis.track_layers(self.model.model, self.vis, self.mode)
+        self.fts = fts
+        self.proj = proj
 
-    def forward(self, x, fts='out', pool_fn=None, **kwargs):
-        y = self.model(x, **kwargs)
-        if fts == 'out': 
-            return y
-        else:
-            if pool_fn == 'avg':
-                _pool_fn = lambda z: z.reshape([z.shape[0], z.shape[1], -1]).mean(dim=-1)
-            elif pool_fn == 'vec':
-                _pool_fn = lambda z: z.reshape([z.shape[0], -1])
-            elif pool_fn == 'avg+norm':
-                def _pool_fn(z):
-                    z = z.reshape([z.shape[0], z.shape[1], -1]).mean(dim=-1)
-                    return F.normalize(z, p=2, dim=1)
-            elif pool_fn == 'cls_tkn':
-                def _pool_fn(z):
-                    if len(z.shape) == 2:
-                        return z
-                    return z[0]  # Use cls token embedding.
-            elif pool_fn == 'cls_tkn+norm':
-                def _pool_fn(z):
-                    if len(z.shape) == 2:
-                        return F.normalize(z, p=2, dim=-1)
-                    return F.normalize(z[0], p=2, dim=-1)  # Use cls token embedding.
-            else:
-                _pool_fn = lambda z: z
+    def forward(self, x, **kwargs):
+        out = self.fts(x, **kwargs)
+        return out @ self.proj.to(x.device)
 
-            if isinstance(fts, int):
-                z = list(self.vis.values())[fts]
-                return _pool_fn(z)
-            elif isinstance(fts, (list, tuple)):
-                l_fts = list(self.vis.values())
-                #z = [_pool_fn(l_fts[i]) for i in fts]
-                z = []
-                for i in fts:
-                    if isinstance(i, int):
-                        z_curr = l_fts[i]
-                    elif i == 'out':
-                        z_curr = y
-                    z.append(_pool_fn(z_curr))
-                return torch.cat(z, dim=-1)
-            else:
-                raise ValueError(f'Unknown features name: {fts}.')
+
+# class IntFeatWrapper(torch.nn.Module):
+    
+#     def __init__(self, model, mode) -> None:
+#         super().__init__()
+#         self.model = model
+#         self.mode = mode
+#         self.vis = {}
+#         utils_vis.track_layers(self.model.model, self.vis, self.mode)
+
+#     def forward(self, x, fts='out', pool_fn=None, **kwargs):
+#         y = self.model(x, **kwargs)
+#         if fts == 'out': 
+#             return y
+#         else:
+#             if pool_fn == 'avg':
+#                 _pool_fn = lambda z: z.reshape([z.shape[0], z.shape[1], -1]).mean(dim=-1)
+#             elif pool_fn == 'vec':
+#                 _pool_fn = lambda z: z.reshape([z.shape[0], -1])
+#             elif pool_fn == 'avg+norm':
+#                 def _pool_fn(z):
+#                     z = z.reshape([z.shape[0], z.shape[1], -1]).mean(dim=-1)
+#                     return F.normalize(z, p=2, dim=1)
+#             elif pool_fn == 'cls_tkn':
+#                 def _pool_fn(z):
+#                     if len(z.shape) == 2:
+#                         return z
+#                     return z[0]  # Use cls token embedding.
+#             elif pool_fn == 'cls_tkn+norm':
+#                 def _pool_fn(z):
+#                     if len(z.shape) == 2:
+#                         return F.normalize(z, p=2, dim=-1)
+#                     return F.normalize(z[0], p=2, dim=-1)  # Use cls token embedding.
+#             else:
+#                 _pool_fn = lambda z: z
+
+#             if isinstance(fts, int):
+#                 z = list(self.vis.values())[fts]
+#                 return _pool_fn(z)
+#             elif isinstance(fts, (list, tuple)):
+#                 l_fts = list(self.vis.values())
+#                 #z = [_pool_fn(l_fts[i]) for i in fts]
+#                 z = []
+#                 for i in fts:
+#                     if isinstance(i, int):
+#                         z_curr = l_fts[i]
+#                     elif i == 'out':
+#                         z_curr = y
+#                     z.append(_pool_fn(z_curr))
+#                 return torch.cat(z, dim=-1)
+#             else:
+#                 raise ValueError(f'Unknown features name: {fts}.')
+
+
+# Copied from https://github.com/ssundaram21/dreamsim/blob/main/dreamsim/model.py.
+# class MLP(torch.nn.Module):
+#     """
+#     MLP head with a single hidden layer and residual connection.
+#     """
+#     def __init__(self, in_features: int, hidden_size: int = 512):
+#         super().__init__()
+#         self.hidden_size = hidden_size
+#         self.fc1 = torch.nn.Linear(in_features, self.hidden_size, bias=True)
+#         self.fc2 = torch.nn.Linear(self.hidden_size, in_features, bias=True)
+
+#     def forward(self, img):
+#         x = self.fc1(img)
+#         x = F.relu(x)
+#         return self.fc2(x) + img
 
     
 def get_model_and_transforms(
@@ -191,6 +218,7 @@ def get_model_and_transforms(
         **kwargs):
 
     logger = kwargs['logger']
+    cache_dir = kwargs.get('data_dir', './')
 
     if source == 'openclip':
         model, _, preprocess = open_clip.create_model_and_transforms(
@@ -259,7 +287,7 @@ def get_model_and_transforms(
 
         model, preprocess = dreamsim(
             pretrained=True,
-            cache_dir='../robust-clip/',
+            cache_dir=cache_dir,
             dreamsim_type=modelname,
             device=kwargs.get('device'),  # Changing device after initialization has to
                                           # be done manually for each model part.
@@ -282,173 +310,134 @@ def get_model_and_transforms(
     return model, preprocess
 
 
-def adapt_pos_enc(model, key='positional_embedding', new_res=None, old_res=None,
-    patch_size=None):
-    """Interpolate the positional embedding of ViTs."""
+# def adapt_pos_enc(model, key='positional_embedding', new_res=None, old_res=None,
+#     patch_size=None):
+#     """Interpolate the positional embedding of ViTs."""
 
-    if old_res is None:
-        old_res = model.image_size[0]
-    if patch_size is None:
-        patch_size = model.patch_size[0]
+#     if old_res is None:
+#         old_res = model.image_size[0]
+#     if patch_size is None:
+#         patch_size = model.patch_size[0]
 
-    ckpt = model.state_dict()
+#     ckpt = model.state_dict()
     
-    print(ckpt[key].shape)
-    new_pos_enc = utils.interpolate_pos_encoding(
-        pos_embed=ckpt[key].unsqueeze(0),
-        new_img_size=new_res,
-        old_img_size=old_res,
-        patch_size=patch_size).squeeze(0)
-    print(new_pos_enc.shape)
-    ckpt[key] = new_pos_enc
+#     print(ckpt[key].shape)
+#     new_pos_enc = utils.interpolate_pos_encoding(
+#         pos_embed=ckpt[key].unsqueeze(0),
+#         new_img_size=new_res,
+#         old_img_size=old_res,
+#         patch_size=patch_size).squeeze(0)
+#     print(new_pos_enc.shape)
+#     ckpt[key] = new_pos_enc
 
-    model.positional_embedding = torch.nn.Parameter(
-        torch.randn(new_pos_enc.shape))
-    model.load_state_dict(ckpt)
+#     model.positional_embedding = torch.nn.Parameter(
+#         torch.randn(new_pos_enc.shape))
+#     model.load_state_dict(ckpt)
 
-    model.image_size = (new_res, new_res)
+#     model.image_size = (new_res, new_res)
 
 
-def get_data(dataset='imagenet', data_dir='/scratch/datasets/imagenet/',
-    prepr=None, n_ex=10, seed=0, image_paths=None):
+# def get_data(dataset='imagenet', data_dir='/scratch/datasets/imagenet/',
+#     prepr=None, n_ex=10, seed=0, image_paths=None):
 
-    if dataset == 'imagenet':
-        print(f'Fixing seed={seed}.')
-        torch.manual_seed(1)
+#     if dataset == 'imagenet':
+#         print(f'Fixing seed={seed}.')
+#         torch.manual_seed(1)
 
-        test_dataset = datasets.ImageFolder(root=data_dir + 'val', transform=prepr)
-        test_loader = torch.utils.data.DataLoader(test_dataset,
-                                          batch_size=n_ex,
-                                          shuffle=True,
-                                          num_workers=16,
-                                          pin_memory=True,
-                                          )
+#         test_dataset = datasets.ImageFolder(root=data_dir + 'val', transform=prepr)
+#         test_loader = torch.utils.data.DataLoader(test_dataset,
+#                                           batch_size=n_ex,
+#                                           shuffle=True,
+#                                           num_workers=16,
+#                                           pin_memory=True,
+#                                           )
 
-        x_test, y_test = next(iter(test_loader))
+#         x_test, y_test = next(iter(test_loader))
 
-    elif dataset == 'mmhal':
-        if image_paths is None:
-            image_paths = os.listdir(data_dir)
-            image_paths = [item for item in image_paths if item.endswith('.jpg')]
-            image_paths = image_paths[:n_ex]
+#     elif dataset == 'mmhal':
+#         if image_paths is None:
+#             image_paths = os.listdir(data_dir)
+#             image_paths = [item for item in image_paths if item.endswith('.jpg')]
+#             image_paths = image_paths[:n_ex]
 
-        x_test = []
-        for image_path in image_paths:
-            print(image_path)
-            with open(os.path.join(data_dir, image_path), 'rb') as f:
-                img = Image.open(f)
-                img = img.convert('RGB')
+#         x_test = []
+#         for image_path in image_paths:
+#             print(image_path)
+#             with open(os.path.join(data_dir, image_path), 'rb') as f:
+#                 img = Image.open(f)
+#                 img = img.convert('RGB')
             
-            img = prepr(img)
-            x_test.append(img.unsqueeze(0))
-        x_test = torch.cat(x_test, 0)
+#             img = prepr(img)
+#             x_test.append(img.unsqueeze(0))
+#         x_test = torch.cat(x_test, 0)
 
-    else:
-        raise ValueError(f'Unknown dataset: {dataset}.')
+#     else:
+#         raise ValueError(f'Unknown dataset: {dataset}.')
     
-    print(x_test.shape, x_test.max(), x_test.min())
-    return x_test
+#     print(x_test.shape, x_test.max(), x_test.min())
+#     return x_test
 
 
-def no_axes(ax):
-    for x in ax.reshape([-1]):
-        x.axis('off')
+# def no_axes(ax):
+#     for x in ax.reshape([-1]):
+#         x.axis('off')
 
 
-def get_args():
 
-    parser = argparse.ArgumentParser(description='')
-    # model
-    parser.add_argument('--ckptpath', type=str)
-    parser.add_argument('--modelname', type=str)
-    parser.add_argument('--mlp_head', type=str)
-    parser.add_argument('--lora_weights', type=str)
-    parser.add_argument('--int_fts_pool', type=str)
-    parser.add_argument('--int_fts_subset', type=str)
-    # data
-    parser.add_argument('--dataset', type=str)
-    parser.add_argument('--data_dir', type=str)
-    parser.add_argument('--img_res', type=int, default=224)
-    parser.add_argument('--n_ex', type=int, default=8)
-    parser.add_argument('--split', type=str, default='test_imagenet')
-    # attacks
-    parser.add_argument('--attack_name', type=str)
-    parser.add_argument('--loss', type=str, default='ce')
-    parser.add_argument('--norm', type=str, default='Linf')
-    parser.add_argument('--eps', type=float, default=8.)
-    parser.add_argument('--n_iter', type=int, default=10)
-    parser.add_argument('--alpha_init', type=float)
-    parser.add_argument('--use_rs', action='store_true')
-    parser.add_argument('--n_restarts', type=int, default=1)
-    # others
-    parser.add_argument('--batch_size', type=int, default=25)
-    parser.add_argument('--map_layer', type=int, default=-1)
-    parser.add_argument('--device', type=str, default='cuda:0')
-    parser.add_argument('--save_to_dict', action='store_true')
-    #parser.add_argument('--save_preds', action='store_true')
-    #parser.add_argument('--save_output', action='store_true')
-    parser.add_argument('--seed', type=int, default=0)
-    parser.add_argument('--savedir', type=str, default='./results_clip')
-    parser.add_argument('--logdir', type=str, default='./logs_clip')
-    parser.add_argument('--dictname', type=str)
-
-    args = parser.parse_args()
-    
-    return args
-
-
-def main(args):
+# def main(args):
 
     # Get model.
-    model, preprocess = get_model_and_transforms(
-        modelname=args.modelname, ckptpath=args.ckptpath)
-    model.eval()
+    # model, preprocess = get_model_and_transforms(
+    #     modelname=args.modelname, ckptpath=args.ckptpath)
+    # model.eval()
 
-    # Adapt to different image resolution.
-    if args.img_res != 224:
-        adapt_pos_enc(model.vision, key='positional_embedding', new_res=args.img_res,
-            old_res=224)
-        preprocess.transforms[:2] = [
-            transforms.Resize(
-                args.img_res,
-                interpolation=transforms.InterpolationMode("bicubic")),
-            transforms.CenterCrop(args.img_res),
-            ]
+    # # Adapt to different image resolution.
+    # if args.img_res != 224:
+    #     adapt_pos_enc(model.vision, key='positional_embedding', new_res=args.img_res,
+    #         old_res=224)
+    #     preprocess.transforms[:2] = [
+    #         transforms.Resize(
+    #             args.img_res,
+    #             interpolation=transforms.InterpolationMode("bicubic")),
+    #         transforms.CenterCrop(args.img_res),
+    #         ]
 
-    normalize_fn = lambda x: x  # Just identity.
-    vis_enc = ClipVisionModel(model.visual, None, normalize_fn)
-    vis_enc.to(args.device)
+    # normalize_fn = lambda x: x  # Just identity.
+    # vis_enc = ClipVisionModel(model.visual, None, normalize_fn)
+    # vis_enc.to(args.device)
 
-    # Get data.
-    x_test = get_data(dataset=args.dataset, data_dir=args.data_dir,
-        prepr=preprocess, n_ex=args.n_ex, seed=args.seed, image_paths=None)
+    # # Get data.
+    # x_test = get_data(dataset=args.dataset, data_dir=args.data_dir,
+    #     prepr=preprocess, n_ex=args.n_ex, seed=args.seed, image_paths=None)
 
-    # Get maps.
-    all_maps = []
-    mode = utils_vis.INTERM_REPRS['CLIP']
-    print(f'Using {mode} as inner representation, layer {args.map_layer}.')
+    # # Get maps.
+    # all_maps = []
+    # mode = utils_vis.INTERM_REPRS['CLIP']
+    # print(f'Using {mode} as inner representation, layer {args.map_layer}.')
     
-    n_batches = math.ceil(args.n_ex / args.batch_size)
-    bs = args.batch_size
+    # n_batches = math.ceil(args.n_ex / args.batch_size)
+    # bs = args.batch_size
 
-    for i in range(n_batches):
-        vis = {}
-        utils_vis.track_layers(vis_enc.model.transformer, vis, mode)
+    # for i in range(n_batches):
+    #     vis = {}
+    #     utils_vis.track_layers(vis_enc.model.transformer, vis, mode)
 
-        with torch.no_grad():
-            x = x_test[bs * i:bs * (i + 1)]
-            _ = vis_enc(x.to(device), output_normalize=False,)
+    #     with torch.no_grad():
+    #         x = x_test[bs * i:bs * (i + 1)]
+    #         _ = vis_enc(x.to(device), output_normalize=False,)
 
-        ks = list(vis.keys())
-        all_maps.append(vis[ks[args.map_layer]][1].clone().cpu())
+    #     ks = list(vis.keys())
+    #     all_maps.append(vis[ks[args.map_layer]][1].clone().cpu())
 
-    all_maps = torch.cat(all_maps, dim=0)
+    # all_maps = torch.cat(all_maps, dim=0)
 
-    # TODO: complete this.
-    fname = None
-    torch.save(all_maps, fname)
+    # # TODO: complete this.
+    # fname = None
+    # torch.save(all_maps, fname)
+
+    #print(args)
 
 
 if __name__ == '__main__':
-    args = get_args()
-    main(args)
+    
+    pass

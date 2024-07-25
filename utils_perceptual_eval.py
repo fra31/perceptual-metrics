@@ -1,7 +1,53 @@
 import torch
 import torch.nn.functional as F
+import argparse
+import os
 
-from autoattack.other_utils import check_imgs
+import utils_perceptual_models
+
+
+def get_args():
+
+    parser = argparse.ArgumentParser(description='')
+    # model
+    parser.add_argument('--ckptpath', type=str)
+    parser.add_argument('--shortname', type=str)
+    parser.add_argument('--modelname', type=str)
+    parser.add_argument('--mlp_head', type=str)
+    parser.add_argument('--lora_weights', type=str)
+    #parser.add_argument('--int_fts_pool', type=str)
+    #parser.add_argument('--int_fts_subset', type=str)
+    parser.add_argument('--model_dir', type=str, default='./')
+    # data
+    parser.add_argument('--dataset', type=str)
+    parser.add_argument('--data_dir', type=str)
+    parser.add_argument('--img_res', type=int, default=224)
+    parser.add_argument('--n_ex', type=int, default=8)
+    parser.add_argument('--split', type=str, default='test_imagenet')
+    # attacks
+    parser.add_argument('--attack_name', type=str)
+    parser.add_argument('--loss', type=str, default='ce')
+    parser.add_argument('--norm', type=str, default='Linf')
+    parser.add_argument('--eps', type=float, default=8.)
+    parser.add_argument('--n_iter', type=int, default=10)
+    parser.add_argument('--alpha_init', type=float)
+    parser.add_argument('--use_rs', action='store_true')
+    parser.add_argument('--n_restarts', type=int, default=1)
+    # others
+    parser.add_argument('--batch_size', type=int, default=25)
+    parser.add_argument('--map_layer', type=int, default=-1)
+    parser.add_argument('--device', type=str, default='cuda:0')
+    parser.add_argument('--save_to_dict', action='store_true')
+    #parser.add_argument('--save_preds', action='store_true')
+    #parser.add_argument('--save_output', action='store_true')
+    parser.add_argument('--seed', type=int, default=0)
+    parser.add_argument('--savedir', type=str, default='./results_clip')
+    parser.add_argument('--logdir', type=str, default='./logs_clip')
+    parser.add_argument('--dictname', type=str)
+
+    args = parser.parse_args()
+    
+    return args
 
 
 def cosine_sim(u, v):
@@ -252,3 +298,91 @@ def check_imgs_loader(x_adv, x_clean, norm):
     print(str_det)
     
     return str_det
+
+
+def resolve_args(args):
+
+    #args.shortname = utils_perceptual_models.SHORTNAMES.get(args.ckptpath, 'unknown')
+    model_info = utils_perceptual_models.PRETRAINED_MODELS.get(args.shortname, None)
+    if model_info is None:
+        raise ValueError(f'Unknown model: {args.shortname}')
+    args.ckptpath = model_info['ckptpath']
+    args.mlp_head = model_info.get('mlp_head', None)
+    args.lora_weights = model_info.get('lora_weights', None)
+
+    if (args.ckptpath is not None and not args.ckptpath.startswith('hf-hub') \
+        and not args.ckptpath.startswith('dreamsim')):  # The other models are automatically downloaded.
+        args.ckptpath = os.path.join(args.model_dir, args.ckptpath)
+    
+    # Not very clear, but to use more HF checkpoints.
+    # TODO: improve this.
+    args.pretrained = 'openai' if args.ckptpath is None else None
+    args.source = 'openclip'
+    args.arch = None
+    args.metric_type = 'embedding'
+    if args.modelname is None:  # Detect backbone from checkpoint name.
+        assert args.ckptpath is not None, 'Backbone type needed for OpenAI models.'
+        if 'ViT-L-14' in args.ckptpath:
+            args.modelname = 'ViT-L-14'
+        elif 'ViT-B-32' in args.ckptpath or 'vitb32' in args.ckptpath:
+            args.modelname = 'ViT-B-32'
+        elif 'ViT-B-16' in args.ckptpath or 'vitb16' in args.ckptpath:
+            args.modelname = 'ViT-B-16'
+        elif 'convnext_base_w' in args.ckptpath:
+            args.arch = 'convnext-base-w'
+            args.modelname = 'hf-hub:laion/CLIP-convnext_base_w-laion2B-s13B-b82K-augreg'
+            args.pretrained = None
+            if args.modelname == args.ckptpath:  # Use pre-trained model.
+                args.ckptpath = None
+        elif 'lipsim' in args.ckptpath:
+            args.modelname = 'convnet-small'
+        elif 'R-LPIPS' in args.ckptpath:
+            args.modelname = 'alexnet'
+            args.metric_type = 'lpips'
+        elif args.ckptpath == 'dreamsim:ensemble':
+            args.modelname = 'ensemble'
+        else:
+            raise ValueError('Unknown architecture.')
+    if args.arch is None:
+        args.arch = args.modelname  # For logging.
+    if (args.ckptpath is not None and args.ckptpath.startswith('hf-hub') \
+        and args.arch != 'convnext-base-w'):
+        args.modelname = args.ckptpath
+        args.pretrained = None
+        args.ckptpath = None
+    if args.ckptpath is not None and args.ckptpath.startswith('dreamsim:'):
+        args.modelname = args.ckptpath.replace('dreamsim:', '')
+        args.pretrained = None
+        args.ckptpath = None
+        args.source = 'dreamsim'
+    if args.mlp_head is not None:
+        args.arch += f'+head'
+        #args.shortname += f'+{args.mlp_head}'  # This should be in the name already now.
+    if args.lora_weights is not None:
+        args.arch += f'+lora'
+        #args.shortname += f'+{args.lora_weights}'  # This should be in the name already now.
+    if args.ckptpath is not None:
+        if 'lipsim' in args.ckptpath:
+            args.source = 'lipsim'
+        if 'R-LPIPS' in args.ckptpath:
+            args.source = 'r-lpips'
+    if args.dataset == 'things':
+        args.metric_type = 'odd-one-out' if args.source != 'r-lpips' else 'odd-one-out-lpips'
+
+    if args.norm == 'Linf':
+        args.eps /= 255.
+    args.logdir = f'{args.logdir}/{args.dataset}_{args.split}'
+    os.makedirs(args.logdir, exists_ok=True)
+    args.log_path = (
+        f'{args.logdir}/log_{args.arch}_{args.shortname}'
+        f'_n_ex={args.n_ex}'
+        )
+    args.runinfo = None
+    if args.attack_name is not None:
+        runinfo = (
+            f'{args.attack_name}-{args.loss}-{args.n_iter}x{args.n_restarts}'
+            f'_{args.norm}_eps={args.eps:.5f}_alpha={args.alpha_init}'
+            f'_rs={args.use_rs}')
+        args.log_path += '_' + runinfo
+        args.runinfo = runinfo
+    args.log_path += '.txt'

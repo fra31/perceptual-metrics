@@ -20,8 +20,18 @@ NP_EXTENSIONS = ['.npy',]
 BAPPS_SPLITS = [
     'cnn',  'color',  'deblur',  'frameinterp',  'superres',  'traditional']
 
-DEFAULT_DIRS = {
+DEFAULT_DIRS_OLD = {
     'nights': '../robust-clip/nights',
+    'bapps': '../PerceptualSimilarity/dataset/2afc/val/',
+    'bapps-bin': '../PerceptualSimilarity/dataset/2afc/val/',
+    'things': '../things_dataset_new/THINGS/Images/',
+    # Other files for datasets.
+    'things-triplets': '../things_dataset/triplet_dataset/triplets_large_final_correctednc_correctedorder.csv',
+    'things-imgpaths': './things_first_imgs_idx.txt',
+}
+
+DEFAULT_DIRS = {
+    'nights': 'nights',
     'bapps': '../PerceptualSimilarity/dataset/2afc/val/',
     'bapps-bin': '../PerceptualSimilarity/dataset/2afc/val/',
     'things': '../things_dataset_new/THINGS/Images/',
@@ -203,6 +213,8 @@ def load_dataset(args, **kwargs):
 
     if args.data_dir is None:
         args.data_dir = DEFAULT_DIRS[args.dataset]
+    else:
+        args.data_dir = os.path.join(args.data_dir, DEFAULT_DIRS[args.dataset])
 
     if args.dataset == 'nights':
         preprocess = kwargs['preprocess']

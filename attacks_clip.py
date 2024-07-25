@@ -193,8 +193,6 @@ def eval_loader(fp, loader, n_ex=10, bs=10, device='cuda:0', norm='Linf', eps=8/
                 fp, x, x_left.to(device), x_right.to(device), normalize=True)
             
         
-        
-
         if attack_name == 'apgd':
             out = autopgd_train_clean.apgd_train(
                 model=clf_fn,
