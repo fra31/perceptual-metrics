@@ -1,6 +1,6 @@
 import torch
 import torch.nn.functional as F
-from autoattack import AutoAttack
+#from autoattack import AutoAttack
 from autoattack.other_utils import Logger
 
 import autopgd_train_clean
@@ -214,28 +214,28 @@ def eval_loader(fp, loader, n_ex=10, bs=10, device='cuda:0', norm='Linf', eps=8/
             l_acc.append(out[1].float().cpu())
             acc = torch.cat(l_acc, 0) if len(l_acc) > 1 else out[1].cpu().float()
 
-        elif attack_name == 'square':
-            import square
+        # elif attack_name == 'square':
+        #     import square
 
-            attack_fn = square.SquareAttack(
-                clf_fn,
-                norm=norm,
-                n_queries=n_iter,
-                eps=eps,
-                p_init=.8,
-                n_restarts=1,
-                seed=0,
-                verbose=True,
-                targeted=False,
-                loss=loss,
-                resc_schedule=True,
-                device=device,
-                early_stop=False,  # Otherwise left and right embedding should be changed.
-            )
-            out = attack_fn.perturb(x_ref.to(device), lab.long().to(device))
-            x_adv.append(out[0].cpu())
-            l_acc.append(out[1].float().cpu())
-            acc = torch.cat(l_acc, 0) if len(l_acc) > 1 else out[1].cpu().float()
+        #     attack_fn = square.SquareAttack(
+        #         clf_fn,
+        #         norm=norm,
+        #         n_queries=n_iter,
+        #         eps=eps,
+        #         p_init=.8,
+        #         n_restarts=1,
+        #         seed=0,
+        #         verbose=True,
+        #         targeted=False,
+        #         loss=loss,
+        #         resc_schedule=True,
+        #         device=device,
+        #         early_stop=False,  # Otherwise left and right embedding should be changed.
+        #     )
+        #     out = attack_fn.perturb(x_ref.to(device), lab.long().to(device))
+        #     x_adv.append(out[0].cpu())
+        #     l_acc.append(out[1].float().cpu())
+        #     acc = torch.cat(l_acc, 0) if len(l_acc) > 1 else out[1].cpu().float()
 
         else:
             raise ValueError(f'Unknown attack: {attack_name}.')

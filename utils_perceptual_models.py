@@ -100,9 +100,12 @@ LORA_WEIGHTS_DICT = {
 }
 
 PRETRAINED_MODELS = {
-    'convnext_base-fare': {
+    'convnext_base_w': {
+        'ckptpath': 'hf-hub:laion/CLIP-convnext_base_w-laion2B-s13B-b82K-augreg',
+    },
+    'convnext_base_w-fare': {
         'ckptpath': 'convnext_base_w-fare-eps4.pt',
-        },
+    },
     'mlp-convnext_base_w-fare': {
         'ckptpath': 'convnext_base_w-fare-eps4.pt',  # Backbone checkpoint.
         'mlp_head': 'mlp-convnext_base_w-fare-eps4',
@@ -112,6 +115,48 @@ PRETRAINED_MODELS = {
         'ckptpath': 'convnext_base_w-fare-eps4.pt',  # Backbone checkpoint.
         'lora_weights': 'lora-convnext_base_w-fare',
         'lora_path': 'lora-convnext_base_w-fare',
+    },
+    'convnext_base_w-tecoa': {
+        'ckptpath': 'convnext_base_w-tecoa-eps4.pt',
+    },
+    'mlp-convnext_base_w-tecoa': {
+        'ckptpath': 'convnext_base_w-tecoa-eps4.pt',  # Backbone checkpoint.
+        'mlp_head': 'mlp-convnext_base_w-tecoa-eps4',
+        'mlp_info': ('mlp-convnext_base_w-tecoa-eps4.pt', (640, 512)),
+    },
+    'lora-convnext_base_w-tecoa': {
+        'ckptpath': 'convnext_base_w-tecoa-eps4.pt',  # Backbone checkpoint.
+        'lora_weights': 'lora-convnext_base_w-tecoa',
+        'lora_path': 'lora-convnext_base_w-tecoa',
+    },
+    'vit-b-16': {
+        'ckptpath': 'hf-hub:laion/CLIP-ViT-B-16-laion2B-s34B-b88K',
+    },
+    'vit-b-16-fare': {
+        'ckptpath': 'vit-b-16-fare-eps4.pt',
+    },
+    'mlp-vit-b-16-fare': {
+        'ckptpath': 'vit-b-16-fare-eps4.pt',  # Backbone checkpoint.
+        'mlp_head': 'mlp-vit-b-16-fare-eps4',
+        'mlp_info': ('mlp-vit-b-16-fare-eps4.pt', (512, 512)),
+    },
+    'lora-vit-b-16-fare': {
+        'ckptpath': 'vit-b-16-fare-eps4.pt',  # Backbone checkpoint.
+        'lora_weights': 'lora-vit-b-16-fare',
+        'lora_path': 'lora-vit-b-16-fare',
+    },
+    'vit-b-16-tecoa': {
+        'ckptpath': 'vit-b-16-tecoa-eps4.pt',
+    },
+    'mlp-vit-b-16-tecoa': {
+        'ckptpath': 'vit-b-16-tecoa-eps4.pt',  # Backbone checkpoint.
+        'mlp_head': 'mlp-vit-b-16-tecoa-eps4',
+        'mlp_info': ('mlp-vit-b-16-tecoa-eps4.pt', (512, 512)),
+    },
+    'lora-vit-b-16-tecoa': {
+        'ckptpath': 'vit-b-16-tecoa-eps4.pt',  # Backbone checkpoint.
+        'lora_weights': 'lora-vit-b-16-tecoa',
+        'lora_path': 'lora-vit-b-16-tecoa',
     },
 }
 

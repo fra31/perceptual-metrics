@@ -326,7 +326,8 @@ def resolve_args(args):
             args.modelname = 'ViT-L-14'
         elif 'ViT-B-32' in args.ckptpath or 'vitb32' in args.ckptpath:
             args.modelname = 'ViT-B-32'
-        elif 'ViT-B-16' in args.ckptpath or 'vitb16' in args.ckptpath:
+        elif ('ViT-B-16' in args.ckptpath or 'vitb16' in args.ckptpath
+              or 'vit-b-16' in args.ckptpath):
             args.modelname = 'ViT-B-16'
         elif 'convnext_base_w' in args.ckptpath:
             args.arch = 'convnext-base-w'

@@ -83,13 +83,24 @@ ckpts = [
 ][-1:]  # -16:-15
 
 shortnames = [
-    'convnext_base-fare',
+    'convnext_base_w',
+    'convnext_base_w-fare',
     'mlp-convnext_base_w-fare',
     'lora-convnext_base_w-fare',
-][1:2]
+    'convnext_base_w-tecoa',
+    'mlp-convnext_base_w-tecoa',
+    'lora-convnext_base_w-tecoa',
+    'vit-b-16-fare',
+    'vit-b-16-tecoa',
+    'vit-b-16',
+    'lora-vit-b-16-tecoa',
+    'lora-vit-b-16-fare',
+    'mlp-vit-b-16-fare',
+    'mlp-vit-b-16-tecoa'
+][-1:]
 
 norm = ['Linf', 'L2'][0]
-epss = [0, 1, 2, 3, 4, 6, 8, 12, 16, 20, 6, 9, 12, 15][6:7]
+epss = [0, 1, 2, 3, 4, 6, 8, 12, 16, 20, 6, 9, 12, 15][4:5]
 splits = [
    'test_imagenet',
    'test_no_imagenet',
@@ -109,7 +120,7 @@ splits = [
 str_to_run = (
     'eval.py --n_ex -1 --batch_size 100 --device cuda:0'
     #' --norm Linf'
-    #' --n_iter 10000'
+    #' --n_iter 100'
     #' --alpha_init 2.'
     #' --attack_name apgd'
     #' --dataset bapps-bin'
@@ -117,9 +128,9 @@ str_to_run = (
     #' --modelname ViT-L-14'
     #' --loss binary-margin'
     #' --attack_name square --loss margin'
-    #' --save_to_dict --dictname acc_dets_new.json'
+    ' --save_to_dict --dictname acc_dets.json'
     #f' --norm {norm}'
-    #' --n_restarts 1 --use_rs'
+    ' --n_restarts 1 --use_rs'
     ' --model_dir /tmlscratch/fcroce/perceptual_metrics_models'
     ' --data_dir /tmlscratch/fcroce/datasets'
     )
