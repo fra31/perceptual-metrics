@@ -82,7 +82,9 @@ MLP_HEADS_DICT = {
     'openclip-laion-vitb32': (
         '../robust-clip/mlp_ours_vitb32_laion2B_original_embedding_lr0.0003_bs512_wd0.0_hidsize512_marg0.05_augmFalse_2024-03-04_14-56-42/lightning_logs/version_0/checkpoints/epoch=10.ckpt',
         (512, 512),
-    )
+    ),
+    # new naming
+    'mlp-convnext_base_w-fare-eps4': ('mlp-convnext_base_w-fare-eps4.pth', (640, 512)),
 }
 
 LORA_WEIGHTS_DICT = {
@@ -98,7 +100,19 @@ LORA_WEIGHTS_DICT = {
 }
 
 PRETRAINED_MODELS = {
-    'convnext_base-fare': {'ckptpath': 'convnext_base_w-fare-eps4.pt',}
+    'convnext_base-fare': {
+        'ckptpath': 'convnext_base_w-fare-eps4.pt',
+        },
+    'mlp-convnext_base_w-fare': {
+        'ckptpath': 'convnext_base_w-fare-eps4.pt',  # Backbone checkpoint.
+        'mlp_head': 'mlp-convnext_base_w-fare-eps4',
+        'mlp_info': ('mlp-convnext_base_w-fare-eps4.pt', (640, 512)),
+    },
+    'lora-convnext_base_w-fare': {
+        'ckptpath': 'convnext_base_w-fare-eps4.pt',  # Backbone checkpoint.
+        'lora_weights': 'lora-convnext_base_w-fare',
+        'lora_path': 'lora-convnext_base_w-fare',
+    },
 }
 
 
@@ -197,20 +211,20 @@ class ProjModel(nn.Module):
 
 
 # Copied from https://github.com/ssundaram21/dreamsim/blob/main/dreamsim/model.py.
-# class MLP(torch.nn.Module):
-#     """
-#     MLP head with a single hidden layer and residual connection.
-#     """
-#     def __init__(self, in_features: int, hidden_size: int = 512):
-#         super().__init__()
-#         self.hidden_size = hidden_size
-#         self.fc1 = torch.nn.Linear(in_features, self.hidden_size, bias=True)
-#         self.fc2 = torch.nn.Linear(self.hidden_size, in_features, bias=True)
+class MLP(torch.nn.Module):
+    """
+    MLP head with a single hidden layer and residual connection.
+    """
+    def __init__(self, in_features: int, hidden_size: int = 512):
+        super().__init__()
+        self.hidden_size = hidden_size
+        self.fc1 = torch.nn.Linear(in_features, self.hidden_size, bias=True)
+        self.fc2 = torch.nn.Linear(self.hidden_size, in_features, bias=True)
 
-#     def forward(self, img):
-#         x = self.fc1(img)
-#         x = F.relu(x)
-#         return self.fc2(x) + img
+    def forward(self, img):
+        x = self.fc1(img)
+        x = F.relu(x)
+        return self.fc2(x) + img
 
     
 def get_model_and_transforms(
@@ -218,11 +232,11 @@ def get_model_and_transforms(
         **kwargs):
 
     logger = kwargs['logger']
-    cache_dir = kwargs.get('data_dir', './')
+    cache_dir = kwargs.get('model_dir', './')
 
     if source == 'openclip':
         model, _, preprocess = open_clip.create_model_and_transforms(
-            modelname, pretrained=pretrained,
+            modelname, pretrained=pretrained, cache_dir=cache_dir,
             )
         if 'convnext_base_w' in modelname:  # The original model was trained at 256px.
             preprocess.transforms[1] = transforms.CenterCrop(224)

@@ -84,7 +84,9 @@ ckpts = [
 
 shortnames = [
     'convnext_base-fare',
-][-1:]
+    'mlp-convnext_base_w-fare',
+    'lora-convnext_base_w-fare',
+][1:2]
 
 norm = ['Linf', 'L2'][0]
 epss = [0, 1, 2, 3, 4, 6, 8, 12, 16, 20, 6, 9, 12, 15][6:7]
@@ -101,7 +103,7 @@ splits = [
    'traditional',
    # things
    'none'
-   ][:1]
+   ][1:2]
 
     
 str_to_run = (
@@ -119,7 +121,7 @@ str_to_run = (
     #f' --norm {norm}'
     #' --n_restarts 1 --use_rs'
     ' --model_dir /tmlscratch/fcroce/perceptual_metrics_models'
-    ' --data_dir /tmlscratch/fcroce/datasets' 
+    ' --data_dir /tmlscratch/fcroce/datasets'
     )
 
 models_to_run = []

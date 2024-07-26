@@ -1,7 +1,9 @@
 import torch
 from peft import LoraConfig, get_peft_model, PeftModel
-from dreamsim.feature_extraction.vision_transformer import vit_base
-from dreamsim.feature_extraction.vit_wrapper import ViTConfig, ViTModel
+#from dreamsim.feature_extraction.vision_transformer import vit_base
+#from dreamsim.feature_extraction.vit_wrapper import ViTConfig, ViTModel
+from vision_transformer import vit_base
+from vit_wrapper import ViTConfig, ViTModel
 
 
 key_mapping = {

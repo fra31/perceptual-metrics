@@ -6,6 +6,7 @@ import os
 from autoattack.other_utils import Logger, makedir
 import time
 import json
+import sys
 
 import utils_perceptual_models
 import utils_perceptual_data
@@ -26,6 +27,7 @@ def get_model_and_preprocess(args, **kwargs):
         mlp_head=args.mlp_head,
         lora_weights=args.lora_weights,
         logger=kwargs['logger'],
+        model_dir=args.model_dir,
         )
     model.eval()
     
@@ -33,10 +35,13 @@ def get_model_and_preprocess(args, **kwargs):
 
     if args.mlp_head is not None:
         # TODO: make this more general.
-        from dreamsim.model import MLP
-        mlp_path, fts = utils_perceptual_models.MLP_HEADS_DICT[args.mlp_head]
+        #from dreamsim.model import MLP
+        #mlp_path, fts = utils_perceptual_models.MLP_HEADS_DICT[args.mlp_head]
+        mlp_path, fts = utils_perceptual_models.PRETRAINED_MODELS[args.shortname]['mlp_info']
+        mlp_path = os.path.join(args.model_dir, mlp_path)
         logger.log(f'Loading MLP head from {mlp_path}.')
-        mlp = MLP(*fts)
+        #mlp = MLP(*fts)
+        mlp = utils_perceptual_models.MLP(*fts)
         if mlp_path is not None:
             ckpt_mlp = torch.load(mlp_path, map_location='cpu')
             mlp.load_state_dict(
@@ -56,7 +61,9 @@ def get_model_and_preprocess(args, **kwargs):
             vis_enc = utils_perceptual_models.ClipVisionModel(model.visual, None, normalize_fn)
         else:
             import utils_lora
-            lora_path = utils_perceptual_models.LORA_WEIGHTS_DICT[args.lora_weights]
+            #lora_path = utils_perceptual_models.LORA_WEIGHTS_DICT[args.lora_weights]
+            lora_path = utils_perceptual_models.PRETRAINED_MODELS[args.shortname]['lora_path']
+            lora_path = os.path.join(args.model_dir, lora_path)
             logger.log(f'Loading LoRA weights from {lora_path}.')
             # Following needed for using models fine-tuned as in DreamSim.
             lora_model, lora_proj = utils_lora.load_lora_models(
@@ -113,14 +120,18 @@ def main(args):
     utils_perceptual_eval.resolve_args(args)
     logger = Logger(args.log_path)
     logger.log(args.log_path)
-    makedirs(args.savedir)
+    makedir(args.savedir)
 
     # Get model.
     fp, preprocess = get_model_and_preprocess(args, logger=logger)
+    print('Model loaded.')
+
+    #sys.exit()
 
     # Load dataset.
     ds, loader = utils_perceptual_data.load_dataset(
         args, preprocess=preprocess, logger=logger)
+    print('Data loaded.')
 
     # Run attacks.
     startt = time.time()

@@ -248,7 +248,7 @@ def load_dataset(args, **kwargs):
         ds,
         batch_size=args.batch_size,
         pin_memory=True,
-        num_workers=8,
+        num_workers=0,
         shuffle=False,
     )
 

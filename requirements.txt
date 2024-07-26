@@ -1,3 +1,5 @@
-clip
-openclip
-dreamsim
+GPUtil
+git+https://github.com/openai/CLIP.git
+open_clip_torch
+git+https://github.com/fra31/auto-attack.git@a39220048b3c9f2cca9a4d3a54604793c68eca7e#egg=autoattack
+peft  #TODO: find out right version

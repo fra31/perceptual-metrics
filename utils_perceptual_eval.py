@@ -372,9 +372,10 @@ def resolve_args(args):
     if args.norm == 'Linf':
         args.eps /= 255.
     args.logdir = f'{args.logdir}/{args.dataset}_{args.split}'
-    os.makedirs(args.logdir, exists_ok=True)
+    os.makedirs(args.logdir, exist_ok=True)
     args.log_path = (
-        f'{args.logdir}/log_{args.arch}_{args.shortname}'
+        #f'{args.logdir}/log_{args.arch}_{args.shortname}'
+        f'{args.logdir}/log_{args.shortname}'
         f'_n_ex={args.n_ex}'
         )
     args.runinfo = None
