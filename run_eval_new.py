@@ -97,7 +97,7 @@ shortnames = [
     'lora-vit-b-16-fare',
     'mlp-vit-b-16-fare',
     'mlp-vit-b-16-tecoa'
-][-1:]
+][6:7]
 
 norm = ['Linf', 'L2'][0]
 epss = [0, 1, 2, 3, 4, 6, 8, 12, 16, 20, 6, 9, 12, 15][4:5]

@@ -1,7 +1,5 @@
 import torch
 from peft import LoraConfig, get_peft_model, PeftModel
-#from dreamsim.feature_extraction.vision_transformer import vit_base
-#from dreamsim.feature_extraction.vit_wrapper import ViTConfig, ViTModel
 from vision_transformer import vit_base
 from vit_wrapper import ViTConfig, ViTModel
 
@@ -93,14 +91,12 @@ def load_lora_models(enc, arch, ckpt_path, device='cpu'):
     elif arch in ['ViT-B-16', 'ViT-B-32']:
         state_dict = enc.state_dict()
         dino_sd = openclip_to_dino(state_dict)
-        #print(dino_sd.keys())
         # try loading it into dino
         patch_size = 16 if '16' in arch else 32
         dino_vit = vit_base(patch_size=patch_size).to(device)
         dino_vit.pos_drop = torch.nn.LayerNorm(dino_vit.embed_dim)
         proj = dino_sd.pop('proj')
         dino_vit.load_state_dict(dino_sd, strict=True)
-        # print(dino_vit)
 
         # # GeLU -> QuickGeLU
         # for blk in dino_vit .blocks:

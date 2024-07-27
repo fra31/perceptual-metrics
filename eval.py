@@ -14,7 +14,6 @@ import utils_perceptual_eval
 import attacks_clip
 
 
-
 def get_model_and_preprocess(args, **kwargs):
     """Load model and pre-processing to use."""
 

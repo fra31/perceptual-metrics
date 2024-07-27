@@ -1,14 +1,13 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torchvision import datasets, transforms
+from torchvision import transforms
 import open_clip
 import clip
-from PIL import Image
 import os
 from types import SimpleNamespace
 
-import utils_perceptual_eval
+#import utils_perceptual_eval
 
 
 SHORTNAMES = {
@@ -498,5 +497,7 @@ def get_model_and_transforms(
 
 
 if __name__ == '__main__':
-    
+    print('Available models:')
+    for k in PRETRAINED_MODELS.keys():
+        print(k)
     pass
