@@ -15,8 +15,6 @@ def get_args():
     parser.add_argument('--modelname', type=str)
     parser.add_argument('--mlp_head', type=str)
     parser.add_argument('--lora_weights', type=str)
-    #parser.add_argument('--int_fts_pool', type=str)
-    #parser.add_argument('--int_fts_subset', type=str)
     parser.add_argument('--model_dir', type=str, default='./')
     # data
     parser.add_argument('--dataset', type=str)
@@ -302,7 +300,6 @@ def check_imgs_loader(x_adv, x_clean, norm):
 
 def resolve_args(args):
 
-    #args.shortname = utils_perceptual_models.SHORTNAMES.get(args.ckptpath, 'unknown')
     model_info = utils_perceptual_models.PRETRAINED_MODELS.get(args.shortname, None)
     if model_info is None:
         raise ValueError(f'Unknown model: {args.shortname}')
@@ -375,7 +372,6 @@ def resolve_args(args):
     args.logdir = f'{args.logdir}/{args.dataset}_{args.split}'
     os.makedirs(args.logdir, exist_ok=True)
     args.log_path = (
-        #f'{args.logdir}/log_{args.arch}_{args.shortname}'
         f'{args.logdir}/log_{args.shortname}'
         f'_n_ex={args.n_ex}'
         )

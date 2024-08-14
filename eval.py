@@ -75,21 +75,6 @@ def get_model_and_preprocess(args, **kwargs):
         vis_enc.eval()
         vis_enc.to(args.device)
 
-        # if args.int_fts_subset is not None:
-        #     # TODO: combine internal features with mlp head.
-        #     logger.log((
-        #         f'Using internal features: mode={args.int_fts_mode},'
-        #         f' subset={args.int_fts_subset} pool_fn={args.int_fts_pool}'))
-        #     int_fts_subset = {
-        #         'out': 'out',
-        #         'm1+out': [-1, 'out'],
-        #         'm1': [-1,],
-        #         'm7+out': [-7, 'out']
-        #         }[args.int_fts_subset]
-        #     fts_model = utils_perceptual_models.IntFeatWrapper(vis_enc, args.int_fts_mode)
-        #     fp = lambda x: fts_model(x, fts=int_fts_subset, pool_fn=args.int_fts_pool,
-        #                              output_normalize=False)
-        # else:
         if args.mlp_head is None:
             fp = lambda x: vis_enc(x, output_normalize=False)
         else:

@@ -212,14 +212,14 @@ def load_dataset(args, **kwargs):
     """Load datasets for perceptual tasks."""
 
     if args.data_dir is None:
-        args.data_dir = DEFAULT_DIRS[args.dataset]
+        _data_dir = DEFAULT_DIRS[args.dataset]
     else:
-        args.data_dir = os.path.join(args.data_dir, DEFAULT_DIRS[args.dataset])
+        _data_dir = os.path.join(args.data_dir, DEFAULT_DIRS[args.dataset])
 
     if args.dataset == 'nights':
         preprocess = kwargs['preprocess']
         ds = NIGHTSTwoAFCDataset(
-            args.data_dir, args.split, preprocess=preprocess, #subdir='/000/'
+            _data_dir, args.split, preprocess=preprocess, #subdir='/000/'
             )
     
     elif args.dataset in ['bapps', 'bapps-bin']:
@@ -256,5 +256,5 @@ def load_dataset(args, **kwargs):
 
 
 if __name__ == '__main__':
-
     pass
+
