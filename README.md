@@ -33,6 +33,7 @@ $\ell_\infty, \epsilon=4/255$ and $\ell_2, \epsilon=3$. More evaluations can be 
 | Dreamsim                    | [Fu et al. (2023)](https://dreamsim-nights.github.io)                 | Ensemble*  | &#x2718; | 90.8     | -             | -        |
 | Dreamsim + MLP              | [Fu et al. (2023)](https://dreamsim-nights.github.io)                 | Ensemble*  | &#x2714; | 93.4     | -             | -        |
 | Dreamsim + LoRA             | [Fu et al. (2023)](https://dreamsim-nights.github.io)                 | Ensemble*  | &#x2714; | **96.2** | 0.5           | 0.9      |
+| OpenCLIP                    | [Cherti et al. (2023)](https://github.com/mlfoundations/open_clip)    | ConvNeXt-B | &#x2718; | 87.2     | 0.0           | 0.0      |
 | R-CLIP<sub>T</sub>          | Ours                                                                  | ConvNeXt-B | &#x2718; | 92.3     | 81.9          | 78.5     |
 | R-CLIP<sub>T</sub> + MLP    | Ours                                                                  | ConvNeXt-B | &#x2714; | 94.5     | 84.4          | 79.8     |
 | R-CLIP<sub>T</sub> + LoRA   | Ours                                                                  | ConvNeXt-B | &#x2714; | 95.0     | **87.2**      | **84.5** |
@@ -78,7 +79,9 @@ with a `model_id` from the pre-trained models after downloading the relative che
 | `mlp-vit-b-16-tecoa`         | ViT-B/16   | TeCoA            | MLP       | 93.7         | 82.1                 | [Link](https://nc.mlcloud.uni-tuebingen.de/index.php/s/BLL8c8DbBxX8RsB) |
 | `lora-vit-b-16-fare`         | ViT-B/16   | FARE             | LoRA      | 95.7         | 80.9                 | [Link](https://nc.mlcloud.uni-tuebingen.de/index.php/s/jNwtQKK3oareL83) |
 | `lora-vit-b-16-tecoa`        | ViT-B/16   | TeCoA            | LoRA      | 94.6         | 81.5                 | [Link](https://nc.mlcloud.uni-tuebingen.de/index.php/s/6aG2kPbpqCjodic) |
-
+ 
+Our zero-shot models are also available on [HuggingFace](https://huggingface.co/collections/chs20/perceptual-metrics-66bcb266d7a9770138ebcdcd) 
+and can directly be loaded with the OpenClip library. 
 The model used in the teaser figure above is `convnext_base_w-tecoa`.
 
 ## Citation
@@ -89,6 +92,7 @@ If you find this work useful, please consider citing our paper:
 @inproceedings{croce2024adversarially,
   title={Adversarially Robust CLIP Models Induce Better (Robust) Perceptual Metrics},
   author={Croce, Francesco and Schlarmann, Christian and Singh, Naman Deep and Hein, Matthias},
-  booktitle={ICML 2024 Workshop on Foundation Models in the Wild}
+  year={2024},
+  booktitle={{ICML Workshop on Foundation Models in the Wild}}
 }
 ```
