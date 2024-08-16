@@ -101,6 +101,7 @@ class ClipVisionModel(torch.nn.Module):
 
 
 class ProjModel(nn.Module):
+    """Add projection layer for LoRA models (following DreamSim)."""
     def __init__(self, fts, proj):
         super().__init__()
         self.fts = fts
@@ -155,72 +156,13 @@ def get_model_and_transforms(
     elif source == 'clip':
         model, preprocess = clip.load(modelname)
 
-    elif source == 'lipsim':
-        # Adapted from https://github.com/SaraGhazanfari/lipsim/tree/main.
-        from lipsim.core.models.l2_lip.model import L2LipschitzNetwork
-
-        config = SimpleNamespace()
-        if modelname == 'convnet-small':
-            config.depth = 20
-            config.num_channels = 45
-            config.depth_linear = 7 
-            config.n_features = 1024
-            config.conv_size = 5
-        model = L2LipschitzNetwork(config, n_classes=1792).eval()
-
-        preprocess = transforms.Compose([
-            transforms.Resize((224, 224),
-                              interpolation=transforms.InterpolationMode.BICUBIC),
-            transforms.ToTensor()
-        ])
-
-    elif source == 'r-lpips':
-        # From https://github.com/SaraGhazanfari/R-LPIPS/tree/main, plus removing
-        # global device and setting strict loading.
-        import lpips
-
-        model = lpips.LPIPSSimple(
-            pretrained=True,
-            net='alex',
-            version='0.1',
-            lpips=True,
-            spatial=False,
-            pnet_rand=False,
-            pnet_tune=False,
-            use_dropout=True,
-            model_path=ckptpath,  # Already loads the checkpoint.
-            eval_mode=True,
-        )
-        preprocess = transforms.Compose([
-            transforms.Resize((224, 224),
-                              interpolation=transforms.InterpolationMode.BICUBIC),
-            transforms.ToTensor()
-        ])  # Unclear what to use for datasets other than BAPPS.
-
-    elif source == 'dreamsim':
-        from dreamsim import dreamsim
-
-        model, preprocess = dreamsim(
-            pretrained=True,
-            cache_dir=cache_dir,
-            dreamsim_type=modelname,
-            device=kwargs.get('device'),  # Changing device after initialization has to
-                                          # be done manually for each model part.
-            )
-        preprocess = transforms.Compose([
-            transforms.Resize((224, 224),
-                              interpolation=transforms.InterpolationMode.BICUBIC),
-            transforms.ToTensor()
-        ])  # The preprocess loaded is a function.
+    else:
+        raise ValueError(f'Unknown source: {source}.')
 
     if ckptpath is not None:
         ckpt = torch.load(ckptpath, map_location='cpu')
         if source in ['openclip']:
             model.visual.load_state_dict(ckpt, strict=True)
-        elif source == 'lipsim':
-            model.load_state_dict(
-                {k.replace('module.model.', ''): v for k, v in ckpt['model_state_dict'].items()},
-                strict=True)
 
     return model, preprocess
 

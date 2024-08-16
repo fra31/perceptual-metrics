@@ -33,13 +33,9 @@ def get_model_and_preprocess(args, **kwargs):
     logger = kwargs.get('logger')
 
     if args.mlp_head is not None:
-        # TODO: make this more general.
-        #from dreamsim.model import MLP
-        #mlp_path, fts = utils_perceptual_models.MLP_HEADS_DICT[args.mlp_head]
         mlp_path, fts = utils_perceptual_models.PRETRAINED_MODELS[args.shortname]['mlp_info']
         mlp_path = os.path.join(args.model_dir, mlp_path)
         logger.log(f'Loading MLP head from {mlp_path}.')
-        #mlp = MLP(*fts)
         mlp = utils_perceptual_models.MLP(*fts)
         if mlp_path is not None:
             ckpt_mlp = torch.load(mlp_path, map_location='cpu')
@@ -60,7 +56,6 @@ def get_model_and_preprocess(args, **kwargs):
             vis_enc = utils_perceptual_models.ClipVisionModel(model.visual, None, normalize_fn)
         else:
             import utils_lora
-            #lora_path = utils_perceptual_models.LORA_WEIGHTS_DICT[args.lora_weights]
             lora_path = utils_perceptual_models.PRETRAINED_MODELS[args.shortname]['lora_path']
             lora_path = os.path.join(args.model_dir, lora_path)
             logger.log(f'Loading LoRA weights from {lora_path}.')
@@ -82,19 +77,8 @@ def get_model_and_preprocess(args, **kwargs):
                 out = vis_enc(x, output_normalize=False)
                 return mlp(out)
 
-    elif args.source in ['lipsim']:
-        model.eval()
-        model.to(args.device)
-        fp = lambda x: model(x)
-
-    elif args.source in ['r-lpips']:
-        model.eval()
-        model.to(args.device)
-        fp = lambda *x, **y: model(*x, **y)
-
-    elif args.source == 'dreamsim':
-        model.eval()
-        fp = lambda x: model.embed(x)
+    else:
+        raise ValueError(f'Unknown source: {args.source}.')
 
     return fp, preprocess
 
@@ -120,7 +104,7 @@ def main(args):
     # Run attacks.
     startt = time.time()
 
-    if args.attack_name in ['apgd', 'apgd-largereps', 'square']:
+    if args.attack_name in ['apgd',]:
         # TODO: merge in one attack.
         if args.n_restarts == 1:
             x_adv, acc = attacks_clip.eval_loader(
@@ -174,12 +158,12 @@ def main(args):
         x_ref = [batch[0] for batch in loader]
         str_dets = utils_perceptual_eval.check_imgs_loader(x_adv, x_ref, args.norm)
         logger.log(str_dets)
-    logger.log('clean')
+    logger.log('Clean accuracy:')
     clean_acc = utils_perceptual_eval.get_acc(
         fp, loader, device=args.device, cust_im_ref=x_ref, n_ex=args.n_ex,
         mode=args.metric_type, logger=logger)
     if args.attack_name is not None:
-        logger.log('adv')
+        logger.log('Robust accuracy:')
         acc = utils_perceptual_eval.get_acc(
             fp, loader, device=args.device, cust_im_ref=x_adv, n_ex=args.n_ex,
             mode=args.metric_type, logger=logger)
