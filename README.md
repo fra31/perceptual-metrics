@@ -1,17 +1,17 @@
 <div align="center">
 
-<h1>Adversarially Robust CLIP Models Induce Better (Robust) Perceptual Metrics</h3>
+<h1>Adversarially Robust CLIP Models Can Induce Better (Robust) Perceptual Metrics</h1>
 </div>
 
 ---------------------------------
 
 <p align="center">
-    <img src="teaser.jpeg" width="800">
+    <img src="teaser.png" width="800">
 </p>
 
-[[Paper](https://openreview.net/forum?id=e3scLKNiNg&noteId=e3scLKNiNg)] [[BibTex](#citation)]
+[[Paper](https://arxiv.org/abs/2502.11725)] [[BibTex](#citation)]
 
-This repository contains code for the paper "Adversarially Robust CLIP Models Induce Better (Robust) Perceptual
+This repository contains code for the paper "Adversarially Robust CLIP Models Can Induce Better (Robust) Perceptual
 Metrics".
 We demonstrate that robust CLIP models induce state-of-the-art zero-shot perceptual similarity metrics _both_ in terms
 of clean performance _and_ adversarial robustness. Moreover, we show that clean fine-tuning on the NIGHTS dataset
@@ -90,9 +90,9 @@ If you find this work useful, please consider citing our paper:
 
 ```bibtex
 @inproceedings{croce2024adversarially,
-  title={Adversarially Robust CLIP Models Induce Better (Robust) Perceptual Metrics},
+  title={Adversarially Robust CLIP Models Can Induce Better (Robust) Perceptual Metrics},
   author={Croce, Francesco and Schlarmann, Christian and Singh, Naman Deep and Hein, Matthias},
-  year={2024},
-  booktitle={{ICML Workshop on Foundation Models in the Wild}}
+  year={2025},
+  booktitle={SaTML}
 }
 ```
